@@ -73,7 +73,6 @@ outputs_test = outputs_test.to(device_name)
 
 ##Setting up some possible models
 
-r2_scores = numpy.array([])
 r2_score_max = -1
 r2_score_max_str = ""
 
@@ -91,9 +90,15 @@ for lr in [0.0005]:
 
         global vali_loss
         global early_stop
+        global early_stop_count
+        global early_stop_limit
+        global vali_losses
 
         vali_loss = 99999
         early_stop = False
+        early_stop_count = 0
+        early_stop_limit = 100
+        vali_losses = []
 
         class Net1(torch.nn.Module):
             def __init__(self):
@@ -451,6 +456,9 @@ for lr in [0.0005]:
                 global r2_score_max_str
                 global vali_loss
                 global early_stop
+                global early_stop_count
+                global early_stop_limit
+                global vali_losses
                 
                 pred = model(inputs_test)
 
@@ -458,10 +466,16 @@ for lr in [0.0005]:
                 outputs_test_numpy = outputs_test.to("cpu").detach().numpy()
 
                 loss = loss_func(pred, outputs_test)
+                vali_losses = vali_losses + [loss.item()]
+
                 if(vali_loss >= loss.item()):
                     vali_loss = loss.item()
                 if(vali_loss < loss.item()):
+                    early_stop_count = early_stop_count+1
+                if(early_stop_count > early_stop_limit):
                     early_stop = True
+                    early_stop_count = 0
+
                 r2 = r2_score(outputs_test_numpy, pred_numpy)
                 print('Validation Epoch: ', epoch ,' Validation Loss: ', loss.item(), "R2 Score: ", r2)
                 if((r2 > 0) & (r2 < 1) & (r2 > r2_score_max)):
@@ -484,13 +498,13 @@ for lr in [0.0005]:
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
-                if (epoch)%200 == 0:
+                if (epoch)%50 == 0:
                     print()
                     print("Lr: ", lr, "Mode: ", mode, "  ------>")
                     print()
                     #print('Train Epoch: ', epoch ,' Train Loss: ', loss.item())
                     vali(epoch)
-                if (early_stop == True) & False:
+                if early_stop == True:
                     early_stop = False
                     print()
                     print()
@@ -577,6 +591,17 @@ with open(full_path, "w") as my_file:
     print('Statistics file created')
 
 
-plt.plot(range(0,len(predictions)), predictions, label = "Predictions" )
-plt.plot(range(0,len(outputs_test)), outputs_test, label = "Real Values", alpha = 0.2)
+
+
+fig, axs = plt.subplots(2, 2)
+
+axs[0, 0].hist(fark, 100)
+axs[0, 0].grid(True)
+axs[0, 0].set_title("Histogram of Differences")
+axs[0, 1].plot(range(0,len(vali_losses)), vali_losses, label = "Validation Loss Values")
+axs[0, 1].set_title("Validation Loss Values")
+axs[1, 0].plot(range(0,len(predictions)), predictions, label = "Predictions" )
+axs[1, 1].plot(range(0,len(outputs_test)), outputs_test, label = "Real Values")
+
+
 plt.show()
