@@ -41,12 +41,6 @@ outputs = excel_data.loc[:, excel_data.columns == "heatingEnergyUse"]
 inputs = torch.tensor(inputs.values).type(torch.float32) 
 outputs = torch.tensor(outputs.values).type(torch.float32) 
 
-
-# dataset = TensorDataset(inputs, outputs)
-
-# batch_size = 5
-# loading_data = DataLoader(dataset, batch_size, shuffle=True)
-
 inputs, outputs = shuffle(inputs, outputs)
 
 #scaling the datasets
@@ -97,7 +91,7 @@ for lr in [0.0005]:
         vali_loss = 99999
         early_stop = False
         early_stop_count = 0
-        early_stop_limit = 100
+        early_stop_limit = 3
         vali_losses = []
 
         class Net1(torch.nn.Module):
@@ -603,5 +597,10 @@ axs[0, 1].set_title("Validation Loss Values")
 axs[1, 0].plot(range(0,len(predictions)), predictions, label = "Predictions" )
 axs[1, 1].plot(range(0,len(outputs_test)), outputs_test, label = "Real Values")
 
+
+plt.show()
+
+plt.plot(range(0,len(outputs_test)), outputs_test, "r",  label = "Real Values", alpha=0.6)
+plt.plot(range(0,len(predictions)), predictions, label = "Predictions" )
 
 plt.show()
